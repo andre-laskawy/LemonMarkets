@@ -22,7 +22,7 @@
     /// </summary>
     public class LemonApi
     {
-        private static bool throwErrors;
+        private static bool throwErrors, useCaching;
 
         private static Semaphore semaphore = new Semaphore(1, 1);
 
@@ -143,7 +143,7 @@
 
                         foreach (var c in response.Results)
                         {
-                            currentDT = defaultDate.AddSeconds(c.Timestamp).ToLocalTime();
+                            currentDT = defaultDate.AddSeconds(c.Timestamp);
                             if (currentDT <= to)
                             {
                                 c.Created = currentDT;
@@ -157,7 +157,7 @@
                             var prevUrl = response.Previous;
                             var dateUntilIdx = prevUrl.IndexOf("date_until=");
                             var prevDateUnix = prevUrl.Substring(dateUntilIdx + 11).Replace(".0", string.Empty);
-                            var datePrev = defaultDate.AddSeconds(long.Parse(prevDateUnix)).ToLocalTime();
+                            var datePrev = defaultDate.AddSeconds(long.Parse(prevDateUnix));
 
                             if (datePrev > to)
                             {
