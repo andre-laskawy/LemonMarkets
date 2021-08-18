@@ -78,39 +78,34 @@
             }
         }
 
-        public async Task<ChartValue> GetDailyOHLC(string symbol)
-        {
-            try
-            {
-                string url = $"https://paper.lemon.markets/rest/v1/trading-venues/XMUN/instruments/{symbol}/data/ohlc/D1/latest/";
-                var json = await MakeRequest(url, null, "GET");
-                var value = JsonConvert.DeserializeObject<ChartValue>(json);
-                return value;
-            }
-            catch
-            {
-                if (throwErrors) throw;
-                return new ChartValue();
-            }
-        }
-
         public async Task<(double Ask, double Bid)> GetTicker(string symbol)
         {
             try
             {
-                string url = $"https://paper.lemon.markets/rest/v1/trading-venues/XMUN/instruments/{symbol}/data/quotes/latest/";
+                string url = $"https://paper-data.lemon.markets/v1/quotes?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
                 var jObject = JObject.Parse(json);
-                var bid = jObject.GetValue<double>("b");
-                var ask = jObject.GetValue<double>("a");
+                var data = jObject.Get("results") as JArray;
+
+                double bid = 0;
+                double ask = 0;
+                var first = data.FirstOrDefault() as JObject;
+                if (first != null)
+                {
+                    bid = first.GetValue<double>("b");
+                    ask = first.GetValue<double>("a");
+                }
 
                 // if no value is retured use the latest market close value
                 if (bid == 0)
                 {
-                    url = $"https://paper.lemon.markets/rest/v1/trading-venues/XMUN/instruments/{symbol}/data/ohlc/m1/latest/";
+                    url = $"https://paper-data.lemon.markets/v1/ohlc/m1?isin={symbol}";
                     json = await MakeRequest(url, null, "GET");
+                    jObject = JObject.Parse(json);
+                    data = jObject.Get("results") as JArray;
+                    first = data.First as JObject;
 
-                    return (jObject.GetValue<double>("c"), jObject.GetValue<double>("c"));
+                    return (first.GetValue<double>("c"), first.GetValue<double>("c"));
                 }
 
                 return (ask, bid);
@@ -131,8 +126,8 @@
                 var defaultDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
                 var currentDT = from;
                           
-                long unixTime = ((DateTimeOffset)from).ToUnixTimeSeconds();
-                string url = $"https://paper.lemon.markets/rest/v1/trading-venues/XMUN/instruments/{symbol}/data/ohlc/m1/?date_from={unixTime}&ordering=date";
+                long unixTime = ((DateTimeOffset)from).ToUnixTimeMilliseconds();
+                string url = $"https://paper-data.lemon.markets/v1/ohlc/m1/?isin={symbol}&from={unixTime}&ordering=date";
 
                 while(currentDT <= to)
                 {
@@ -143,7 +138,7 @@
 
                         foreach (var c in response.Results)
                         {
-                            currentDT = defaultDate.AddSeconds(c.Timestamp);
+                            currentDT = DateTime.Parse(c.Timestamp).ToUniversalTime();
                             if (currentDT <= to)
                             {
                                 c.Created = currentDT;
@@ -152,12 +147,12 @@
                             }
                         }
 
-                        if (url.Contains("date_until"))
+                        if (url.Contains("to="))
                         {
                             var prevUrl = response.Previous;
-                            var dateUntilIdx = prevUrl.IndexOf("date_until=");
-                            var prevDateUnix = prevUrl.Substring(dateUntilIdx + 11).Replace(".0", string.Empty);
-                            var datePrev = defaultDate.AddSeconds(long.Parse(prevDateUnix));
+                            var dateUntilIdx = prevUrl.IndexOf("to=");
+                            var prevDateUnix = prevUrl.Substring(dateUntilIdx + 3).Replace(".0", string.Empty);
+                            var datePrev = defaultDate.AddMilliseconds(long.Parse(prevDateUnix));
 
                             if (datePrev > to)
                             {
@@ -260,7 +255,7 @@
                     var jObject = JObject.Parse(json);
                     result = jObject.GetValue<string>("access_token");
                     var expire = jObject.GetValue<double>("expires_in");
-                    expireDate.AddSeconds(expire - 60); // subscract a little delay to ensure a smooth token refresh
+                    expireDate = expireDate.AddSeconds(expire - 60); // subscract a little delay to ensure a smooth token refresh
                 }
             }
             catch (Exception ex)

@@ -18,7 +18,7 @@ namespace LemonMarkets.Models
         public double Low { get; set; }
 
         [JsonProperty("t")]
-        public long Timestamp { get; set; }
+        public string Timestamp { get; set; }
 
         [JsonIgnore]
         public DateTime Created { get; set; }
