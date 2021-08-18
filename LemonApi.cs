@@ -78,6 +78,23 @@
             }
         }
 
+        public async Task<ChartValue> GetDailyOHLC(string symbol)
+        {
+            try
+            {
+                var url = $"https://paper-data.lemon.markets/v1/ohlc/d1?isin={symbol}";
+                var json = await MakeRequest(url, null, "GET");
+                
+                var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
+                return response.Results.FirstOrDefault();
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return new ChartValue();
+            }
+        }
+
         public async Task<(double Ask, double Bid)> GetTicker(string symbol)
         {
             try
