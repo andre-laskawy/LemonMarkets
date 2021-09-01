@@ -7,7 +7,7 @@
     /// <summary>
     /// Defines the <see cref="JsonObjectExtensions" />.
     /// </summary>
-    public static class JsonObjectExtensions
+    internal static class JsonObjectExtensions
     {
         /// <summary>
         /// Gets an JObject from a json object.

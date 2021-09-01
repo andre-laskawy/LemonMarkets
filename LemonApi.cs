@@ -63,7 +63,7 @@
         {
             try
             {
-                string baseUrl = $"https://paper.lemon.markets/rest/v1/instruments/";
+                string baseUrl = $"https://paper-data.lemon.markets/v1/instruments/";
                 var paramUrl = $"?search={HttpUtility.UrlEncode(searchText)}";
                 paramUrl = type == null ? paramUrl : paramUrl + $"&type={type}";
                 paramUrl = currency == null ? paramUrl : paramUrl + $"&currency={currency.ToUpper()}";
