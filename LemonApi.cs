@@ -4,10 +4,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
@@ -31,6 +28,7 @@
         private static string clientId, clientSecret;
 
         private static DateTime tokenExpireDate;
+        private static string apiBaseUrl = "https://paper-data.lemon.markets/v1/";
 
         public static async Task Init(string lemonClientId, string lemonClientSecret, bool throwExceptions = true)
         {
@@ -59,16 +57,64 @@
             }
         }
 
+        public async Task<LemonResult<Instrument>> SearchWithFilter(InstrumentSearchFilter filter)
+        {
+            try
+            {
+                var resultSet = new LemonResult<Instrument>(){Results = new List<Instrument>()};
+
+                var requestUrl = apiBaseUrl + "instruments?";
+                
+                var qryStr = new StringBuilder();
+                if (filter.SearchByIsins == null || !filter.SearchByIsins.Any())
+                    qryStr.Append("search=" + (string.IsNullOrEmpty(filter.SearchByString) ? "" : HttpUtility.UrlEncode(filter.SearchByString)));
+                else
+                    qryStr.Append("isin=" + string.Join(",", filter.SearchByIsins));
+
+                if (filter.TradingVenue.HasValue)
+                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());
+                    
+                if (filter.Currency.HasValue)
+                    qryStr.Append("&currency=" + filter.Currency);
+                if (filter.InstrumentType.HasValue)
+                    qryStr.Append("&type=" + filter.InstrumentType);
+                if (filter.IsTradable.HasValue)
+                    qryStr.Append("&tradable=" + (filter.IsTradable.GetValueOrDefault() ? "true" : "false"));
+
+                var hasNextPage = true;
+                var reqUrl = requestUrl + qryStr;
+                while (hasNextPage)
+                {
+                    Console.WriteLine(reqUrl);
+                    var json = await MakeRequest(reqUrl, null, "GET");
+                    var results = JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
+                    resultSet.Next = results.Next;
+                    resultSet.Previous = results.Previous;
+
+                    resultSet.Results.AddRange(results.Results);
+                    hasNextPage = filter.WithPaging && !string.IsNullOrEmpty(results.Next);
+                    if (hasNextPage)
+                        reqUrl = resultSet.Next;
+                }
+                return resultSet;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
+        }
+
         public async Task<LemonResult<Instrument>> Search(string searchText, InstrumentType? type = null, string currency = null)
         {
             try
             {
-                string baseUrl = $"https://paper.lemon.markets/rest/v1/instruments/";
+                var reqUrl = apiBaseUrl + "instruments/";
                 var paramUrl = $"?search={HttpUtility.UrlEncode(searchText)}";
                 paramUrl = type == null ? paramUrl : paramUrl + $"&type={type}";
                 paramUrl = currency == null ? paramUrl : paramUrl + $"&currency={currency.ToUpper()}";
 
-                var json = await MakeRequest(baseUrl + paramUrl, null, "GET");
+                var json = await MakeRequest(reqUrl + paramUrl, null, "GET");
                 return JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
             }
             catch
@@ -82,7 +128,7 @@
         {
             try
             {
-                var url = $"https://paper-data.lemon.markets/v1/ohlc/d1?isin={symbol}";
+                var url = $"{apiBaseUrl}ohlc/d1?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
                 
                 var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
@@ -99,7 +145,7 @@
         {
             try
             {
-                string url = $"https://paper-data.lemon.markets/v1/quotes?isin={symbol}";
+                string url = $"{apiBaseUrl}quotes?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
                 var jObject = JObject.Parse(json);
                 var data = jObject.Get("results") as JArray;
@@ -116,7 +162,7 @@
                 // if no value is retured use the latest market close value
                 if (bid == 0)
                 {
-                    url = $"https://paper-data.lemon.markets/v1/ohlc/m1?isin={symbol}";
+                    url = $"{apiBaseUrl}ohlc/m1?isin={symbol}";
                     json = await MakeRequest(url, null, "GET");
                     jObject = JObject.Parse(json);
                     data = jObject.Get("results") as JArray;
@@ -144,7 +190,7 @@
                 var currentDT = from;
                           
                 long unixTime = ((DateTimeOffset)from).ToUnixTimeMilliseconds();
-                string url = $"https://paper-data.lemon.markets/v1/ohlc/m1/?isin={symbol}&from={unixTime}&ordering=date";
+                string url = $"{apiBaseUrl}ohlc/m1/?isin={symbol}&from={unixTime}&ordering=date";
 
                 while(currentDT <= to)
                 {
