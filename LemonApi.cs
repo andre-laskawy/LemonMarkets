@@ -93,6 +93,34 @@
             }
         }
 
+
+        public async Task<LemonResult<Order>> GetOrders(OrderSearchFilter filter)
+        {
+            try
+            {
+                if (filter == null || string.IsNullOrEmpty(filter.SpaceUuid))
+                    throw new Exception("Space Uuid is required");
+
+                var requestUrl = apiTradingBaseUrl + "spaces/" + filter.SpaceUuid + "/orders/";
+                //todo: apply filter
+
+                var json = await MakeRequest(requestUrl, null, "GET");
+                var result = JsonConvert.DeserializeObject<LemonResult<Order>>(json);
+                return result;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
+        }
+
+        public async Task<Space> GetOrder(string spaceUuid, string orderUuid)
+        {
+            return null;
+        }
+
+
         public async Task<LemonResult<Instrument>> SearchWithFilter(InstrumentSearchFilter filter)
         {
             try
