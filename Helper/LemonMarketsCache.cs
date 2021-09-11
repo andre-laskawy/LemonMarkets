@@ -115,7 +115,7 @@ namespace LemonMarkets.Helper
                 logger?.Log(ex);
             }
 
-            return result;
+            return result.Where(p => p.Created >= from).ToList();
         }
     }
 }
