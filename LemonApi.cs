@@ -28,7 +28,11 @@
         private static string clientId, clientSecret;
 
         private static DateTime tokenExpireDate;
-        private static string apiBaseUrl = "https://paper-data.lemon.markets/v1/";
+        private static string apiDataBaseUrl = "https://paper-data.lemon.markets/v1/";
+        private static string apiTradingBaseUrl = "https://paper-trading.lemon.markets/rest/v1/";
+
+        public LemonApi()
+        { }
 
         public static async Task Init(string lemonClientId, string lemonClientSecret, bool throwExceptions = true)
         {
@@ -57,13 +61,45 @@
             }
         }
 
+        public async Task<LemonResult<Space>> GetSpaces()
+        {
+            try
+            {
+                var requestUrl = apiTradingBaseUrl + "spaces";
+                var json = await MakeRequest(requestUrl, null, "GET");
+                var results = JsonConvert.DeserializeObject<LemonResult<Space>>(json);
+                return results;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
+        }
+
+        public async Task<Space> GetSpace(string uuid)
+        {
+            try
+            {
+                var requestUrl = apiTradingBaseUrl + "spaces/" + uuid + "/";
+                var json = await MakeRequest(requestUrl, null, "GET");
+                var result = JsonConvert.DeserializeObject<Space>(json);
+                return result;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
+        }
+
         public async Task<LemonResult<Instrument>> SearchWithFilter(InstrumentSearchFilter filter)
         {
             try
             {
                 var resultSet = new LemonResult<Instrument>(){Results = new List<Instrument>()};
 
-                var requestUrl = apiBaseUrl + "instruments?";
+                var requestUrl = apiDataBaseUrl + "instruments?";
                 
                 var qryStr = new StringBuilder();
                 if (filter.SearchByIsins == null || !filter.SearchByIsins.Any())
@@ -85,7 +121,6 @@
                 var reqUrl = requestUrl + qryStr;
                 while (hasNextPage)
                 {
-                    Console.WriteLine(reqUrl);
                     var json = await MakeRequest(reqUrl, null, "GET");
                     var results = JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
                     resultSet.Next = results.Next;
@@ -105,11 +140,12 @@
             }
         }
 
+        //deprecated
         public async Task<LemonResult<Instrument>> Search(string searchText, InstrumentType? type = null, string currency = null)
         {
             try
             {
-                var reqUrl = apiBaseUrl + "instruments/";
+                var reqUrl = apiDataBaseUrl + "instruments/";
                 var paramUrl = $"?search={HttpUtility.UrlEncode(searchText)}";
                 paramUrl = type == null ? paramUrl : paramUrl + $"&type={type}";
                 paramUrl = currency == null ? paramUrl : paramUrl + $"&currency={currency.ToUpper()}";
@@ -128,7 +164,7 @@
         {
             try
             {
-                var url = $"{apiBaseUrl}ohlc/d1?isin={symbol}";
+                var url = $"{apiDataBaseUrl}ohlc/d1?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
                 
                 var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
@@ -141,11 +177,11 @@
             }
         }
 
-        public async Task<(double Ask, double Bid)> GetTicker(string symbol)
+        public async Task<(double Ask, double Bid)> GetTicker(string isin)
         {
             try
             {
-                string url = $"{apiBaseUrl}quotes?isin={symbol}";
+                string url = $"{apiDataBaseUrl}quotes?isin={isin}";
                 var json = await MakeRequest(url, null, "GET");
                 var jObject = JObject.Parse(json);
                 var data = jObject.Get("results") as JArray;
@@ -162,7 +198,7 @@
                 // if no value is retured use the latest market close value
                 if (bid == 0)
                 {
-                    url = $"{apiBaseUrl}ohlc/m1?isin={symbol}";
+                    url = $"{apiDataBaseUrl}ohlc/m1?isin={isin}";
                     json = await MakeRequest(url, null, "GET");
                     jObject = JObject.Parse(json);
                     data = jObject.Get("results") as JArray;
@@ -180,7 +216,7 @@
             }
         }
 
-        public async Task<List<ChartValue>> GetChart(string symbol, DateTime from, DateTime? to = null)
+        public async Task<List<ChartValue>> GetChart(string isin, DateTime from, DateTime? to = null)
         {
             var result = new List<ChartValue>();
             try
@@ -190,7 +226,7 @@
                 var currentDT = from;
                           
                 long unixTime = ((DateTimeOffset)from).ToUnixTimeMilliseconds();
-                string url = $"{apiBaseUrl}ohlc/m1/?isin={symbol}&from={unixTime}&ordering=date";
+                string url = $"{apiDataBaseUrl}ohlc/m1/?isin={isin}&from={unixTime}&ordering=date";
 
                 while(currentDT <= to)
                 {
@@ -205,7 +241,7 @@
                             if (currentDT <= to)
                             {
                                 c.Created = currentDT;
-                                c.Symbol = symbol;
+                                c.Symbol = isin;
                                 result.Add(c);
                             }
                         }
