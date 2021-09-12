@@ -9,9 +9,10 @@ namespace LemonMarkets.Models.Enums
         All = 0,
         Inactive = 1,
         Active = 2,
-        In_Progress = 3,
-        Executed = 4,
-        Deleted = 5,
-        Expired = 6
+        Activated = 3,
+        In_Progress = 4,
+        Executed = 5,
+        Deleted = 6,
+        Expired = 7
     }
 }

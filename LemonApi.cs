@@ -1,4 +1,6 @@
-﻿using LemonMarkets.Extensions;
+﻿using System.Dynamic;
+using System.Globalization;
+using LemonMarkets.Extensions;
 using LemonMarkets.Models.Enums;
 
 namespace LemonMarkets
@@ -63,6 +65,73 @@ namespace LemonMarkets
                 Console.WriteLine(ex);
             }
         }
+
+        public async Task<PostedOrder> PostOrder(PostOrderQuery query)
+        {
+            try
+            {
+                var requestUrl = apiTradingBaseUrl + "spaces/" + query.SpaceUuid + "/orders/";
+                
+                if (query.ValidUntil < DateTime.UtcNow)
+                    throw new Exception("Can't post order: Valid Until < now");
+                if(query.Side == OrderSide.All)
+                    throw new Exception("Can't post order: OrderSide not specified");
+
+                var qryParams = new Dictionary<string, string>
+                {
+                    {"isin", query.Isin},
+                    {"valid_until", query.ValidUntil.ToUnixDt().ToString()},
+                    {"side", query.Side.ToString().ToLower()},
+                    {"quantity", query.Quantity.ToString()}
+                };
+
+                if(query.StopPrice.HasValue)
+                    qryParams.Add("stop_price", query.StopPrice.Value.ToString(CultureInfo.InvariantCulture));
+                if (query.LimitPrice.HasValue)
+                    qryParams.Add("limit_price", query.LimitPrice.Value.ToString(CultureInfo.InvariantCulture));
+
+                var json = await MakeRequest(requestUrl, qryParams);
+                var result = JsonConvert.DeserializeObject<PostedOrder>(json);
+                return result;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
+        }
+
+        public async Task<bool> DeleteOrder(string spaceUuid, string orderUuid)
+        {
+            try
+            {
+                var requestUrl = apiTradingBaseUrl + "spaces/" + spaceUuid + "/orders/" + orderUuid + "/";
+                var json = await MakeRequest(requestUrl, null, "DELETE");
+                return true;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return false;
+            }
+        }
+
+        public async Task<bool> ActivateOrder(string spaceUuid, string orderUuid)
+        {
+            try
+            {
+                var requestUrl = apiTradingBaseUrl + "spaces/" + spaceUuid + "/orders/" + orderUuid + "/activate";
+                var json = await MakeRequest(requestUrl, null, "PUT");
+                return true;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return false;
+            }
+        }
+
+
 
         public async Task<LemonResult<Space>> GetSpaces()
         {
@@ -348,12 +417,37 @@ namespace LemonMarkets
                         return await r.Content.ReadAsStringAsync();
                     }
                 }
-                else
+
+                if (method == "GET")
                 {
                     var response = await client.GetAsync(url);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
+
+                if (method == "PUT")
+                {
+                    if (payload == null)
+                        payload = new Dictionary<string, string>();
+
+                    using (HttpContent formContent = new FormUrlEncodedContent(payload))
+                    {
+                        var r = await client.PutAsync(url, formContent).ConfigureAwait(false);
+                        r.EnsureSuccessStatusCode();
+                        return await r.Content.ReadAsStringAsync();
+                    }
+                }
+
+                if (method == "DELETE")
+                {
+                    var response = await client.DeleteAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
+                }
+
+                
+
+                throw new Exception("MakeRequest: Undefined METHOD");
             }
             catch
             {
