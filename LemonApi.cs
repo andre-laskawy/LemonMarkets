@@ -1,4 +1,7 @@
-﻿namespace LemonMarkets
+﻿using LemonMarkets.Extensions;
+using LemonMarkets.Models.Enums;
+
+namespace LemonMarkets
 {
     using LemonMarkets.Models;
     using Newtonsoft.Json;
@@ -101,11 +104,37 @@
                 if (filter == null || string.IsNullOrEmpty(filter.SpaceUuid))
                     throw new Exception("Space Uuid is required");
 
-                var requestUrl = apiTradingBaseUrl + "spaces/" + filter.SpaceUuid + "/orders/";
-                //todo: apply filter
+                var requestUrl = apiTradingBaseUrl + "spaces/" + filter.SpaceUuid + "/orders";
 
-                var json = await MakeRequest(requestUrl, null, "GET");
-                var result = JsonConvert.DeserializeObject<LemonResult<Order>>(json);
+                var parameters = new List<string>();
+
+                if(filter.From.HasValue)
+                    parameters.Add("created_at_from=" + filter.From.ToUnixDt());
+                if (filter.To.HasValue)
+                    parameters.Add("created_at_until=" + filter.To.ToUnixDt());
+                if(filter.Side != OrderSide.All)
+                    parameters.Add("side=" + filter.Side.ToString().ToLower());
+                if (filter.Type != OrderType.All)
+                    parameters.Add("type=" + filter.Type.ToString().ToLower());
+                
+                if (parameters.Any())
+                    requestUrl += "?" + string.Join("&", parameters);
+
+                var result = new LemonResult<Order>();
+
+                var hasNextPage = true;
+                while (hasNextPage)
+                {
+                    var json = await MakeRequest(requestUrl, null, "GET");
+                    var res = JsonConvert.DeserializeObject<LemonResult<Order>>(json);
+                    hasNextPage = filter.WithPaging && !string.IsNullOrEmpty(res.Next);
+                    if (!hasNextPage)
+                        return res;
+                    requestUrl = res.Next;
+                    result.Results.AddRange(res.Results);
+                    result.Next = res.Next;
+                    result.Previous = res.Previous;
+                }
                 return result;
             }
             catch
@@ -135,8 +164,8 @@
                 else
                     qryStr.Append("isin=" + string.Join(",", filter.SearchByIsins));
 
-                if (filter.TradingVenue.HasValue)
-                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());
+                /*if (filter.TradingVenue.HasValue)
+                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());*/
                     
                 if (filter.Currency.HasValue)
                     qryStr.Append("&currency=" + filter.Currency);
