@@ -24,7 +24,7 @@ namespace LemonMarkets
     /// </summary>
     public class LemonApi
     {
-        private static bool throwErrors, useCaching;
+        private static bool throwErrors;
 
         private static Semaphore semaphore = new Semaphore(1, 1);
 
@@ -33,7 +33,9 @@ namespace LemonMarkets
         private static string clientId, clientSecret;
 
         private static DateTime tokenExpireDate;
+
         private static string apiDataBaseUrl = "https://paper-data.lemon.markets/v1/";
+        
         private static string apiTradingBaseUrl = "https://paper-trading.lemon.markets/rest/v1/";
 
         public LemonApi()
@@ -131,8 +133,6 @@ namespace LemonMarkets
             }
         }
 
-
-
         public async Task<LemonResult<Space>> GetSpaces()
         {
             try
@@ -164,7 +164,6 @@ namespace LemonMarkets
                 return null;
             }
         }
-
 
         public async Task<LemonResult<Order>> GetOrders(OrderSearchFilter filter)
         {
@@ -213,77 +212,10 @@ namespace LemonMarkets
             }
         }
 
+        // TODO
         public async Task<Space> GetOrder(string spaceUuid, string orderUuid)
         {
-            return null;
-        }
-
-
-        public async Task<LemonResult<Instrument>> SearchWithFilter(InstrumentSearchFilter filter)
-        {
-            try
-            {
-                var resultSet = new LemonResult<Instrument>(){Results = new List<Instrument>()};
-
-                var requestUrl = apiDataBaseUrl + "instruments?";
-                
-                var qryStr = new StringBuilder();
-                if (filter.SearchByIsins == null || !filter.SearchByIsins.Any())
-                    qryStr.Append("search=" + (string.IsNullOrEmpty(filter.SearchByString) ? "" : HttpUtility.UrlEncode(filter.SearchByString)));
-                else
-                    qryStr.Append("isin=" + string.Join(",", filter.SearchByIsins));
-
-                /*if (filter.TradingVenue.HasValue)
-                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());*/
-                    
-                if (filter.Currency.HasValue)
-                    qryStr.Append("&currency=" + filter.Currency);
-                if (filter.InstrumentType.HasValue)
-                    qryStr.Append("&type=" + filter.InstrumentType);
-                if (filter.IsTradable.HasValue)
-                    qryStr.Append("&tradable=" + (filter.IsTradable.GetValueOrDefault() ? "true" : "false"));
-
-                var hasNextPage = true;
-                var reqUrl = requestUrl + qryStr;
-                while (hasNextPage)
-                {
-                    var json = await MakeRequest(reqUrl, null, "GET");
-                    var results = JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
-                    resultSet.Next = results.Next;
-                    resultSet.Previous = results.Previous;
-
-                    resultSet.Results.AddRange(results.Results);
-                    hasNextPage = filter.WithPaging && !string.IsNullOrEmpty(results.Next);
-                    if (hasNextPage)
-                        reqUrl = resultSet.Next;
-                }
-                return resultSet;
-            }
-            catch
-            {
-                if (throwErrors) throw;
-                return null;
-            }
-        }
-
-        //deprecated
-        public async Task<LemonResult<Instrument>> Search(string searchText, InstrumentType? type = null, string currency = null)
-        {
-            try
-            {
-                var reqUrl = apiDataBaseUrl + "instruments/";
-                var paramUrl = $"?search={HttpUtility.UrlEncode(searchText)}";
-                paramUrl = type == null ? paramUrl : paramUrl + $"&type={type}";
-                paramUrl = currency == null ? paramUrl : paramUrl + $"&currency={currency.ToUpper()}";
-
-                var json = await MakeRequest(reqUrl + paramUrl, null, "GET");
-                return JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
-            }
-            catch
-            {
-                if (throwErrors) throw;
-                return null;
-            }
+            return await Task.FromResult<Space>(null);
         }
 
         public async Task<ChartValue> GetDailyOHLC(string symbol)
@@ -292,7 +224,7 @@ namespace LemonMarkets
             {
                 var url = $"{apiDataBaseUrl}ohlc/d1?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
-                
+
                 var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
                 return response.Results.FirstOrDefault();
             }
@@ -350,11 +282,11 @@ namespace LemonMarkets
                 to = to ?? DateTime.UtcNow;
                 var defaultDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
                 var currentDT = from;
-                          
+
                 long unixTime = ((DateTimeOffset)from).ToUnixTimeMilliseconds();
                 string url = $"{apiDataBaseUrl}ohlc/m1/?isin={isin}&from={unixTime}&ordering=date";
 
-                while(currentDT <= to)
+                while (currentDT <= to)
                 {
                     try
                     {
@@ -401,6 +333,53 @@ namespace LemonMarkets
             }
 
             return result.OrderBy(p => p.Created).ToList();
+        }
+
+        public async Task<LemonResult<Instrument>> Search(InstrumentSearchFilter filter)
+        {
+            try
+            {
+                var resultSet = new LemonResult<Instrument>(){Results = new List<Instrument>()};
+
+                var requestUrl = apiDataBaseUrl + "instruments?";
+                
+                var qryStr = new StringBuilder();
+                if (filter.SearchByIsins == null || !filter.SearchByIsins.Any())
+                    qryStr.Append("search=" + (string.IsNullOrEmpty(filter.SearchByString) ? "" : HttpUtility.UrlEncode(filter.SearchByString)));
+                else
+                    qryStr.Append("isin=" + string.Join(",", filter.SearchByIsins));
+
+                /*if (filter.TradingVenue.HasValue)
+                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());*/
+                    
+                if (filter.Currency.HasValue)
+                    qryStr.Append("&currency=" + filter.Currency);
+                if (filter.InstrumentType.HasValue)
+                    qryStr.Append("&type=" + filter.InstrumentType);
+                if (filter.IsTradable.HasValue)
+                    qryStr.Append("&tradable=" + (filter.IsTradable.GetValueOrDefault() ? "true" : "false"));
+
+                var hasNextPage = true;
+                var reqUrl = requestUrl + qryStr;
+                while (hasNextPage)
+                {
+                    var json = await MakeRequest(reqUrl, null, "GET");
+                    var results = JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
+                    resultSet.Next = results.Next;
+                    resultSet.Previous = results.Previous;
+
+                    resultSet.Results.AddRange(results.Results);
+                    hasNextPage = filter.WithPaging && !string.IsNullOrEmpty(results.Next);
+                    if (hasNextPage)
+                        reqUrl = resultSet.Next;
+                }
+                return resultSet;
+            }
+            catch
+            {
+                if (throwErrors) throw;
+                return null;
+            }
         }
 
         private async Task<string> MakeRequest(string url, Dictionary<string, string> payload = null, string method = "POST")
