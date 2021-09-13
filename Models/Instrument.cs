@@ -1,8 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using LemonMarkets.Models.Enums;
 
 namespace LemonMarkets.Models
 {
@@ -47,12 +46,5 @@ namespace LemonMarkets.Models
         public string Mic { get; set; }
     }
 
-    public enum InstrumentType
-    {
-        Stock = 0,
-        Bond = 1,
-        Fund = 2,
-        ETF = 3,
-        Warrant = 4
-    }
+    
 }
