@@ -1,65 +1,64 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using LemonMarkets.Helper;
 using LemonMarkets.Models.Enums;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace LemonMarkets.Models
 {
     public class Order
     {
-        [JsonProperty("instrument")] 
+        [JsonPropertyName("instrument")] 
         public InstrumentShort Instrument { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("valid_until")]
+        [JsonPropertyName("valid_until")]
         public DateTime ValidUntil { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("side")]
+        [JsonConverter(typeof(JsonStringEnumConverter ))]
+        [JsonPropertyName("side")]
         public OrderSide Side { get; set; }
 
-        [JsonProperty("quantity")] 
+        [JsonPropertyName("quantity")] 
         public int Quantity { get; set; }
 
-        [JsonProperty("stop_price")] 
+        [JsonPropertyName("stop_price")] 
         public double? StopPrice { get; set; }
 
-        [JsonProperty("limit_price")] 
+        [JsonPropertyName("limit_price")] 
         public double? LimitPrice { get; set; }
 
-        [JsonProperty("uuid")] 
+        [JsonPropertyName("uuid")] 
         public string Uuid { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("status")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("status")]
         public OrderStatus Status { get; set; }
 
-        [JsonProperty("average_price")] 
+        [JsonPropertyName("average_price")] 
         public double? AveragePrice { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("created_at")]
+        [JsonPropertyName("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("type")]
         public OrderType Type { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("processed_at")]
+        [JsonPropertyName("processed_at")]
         public DateTime ProcessedAt { get; set; }
 
-        [JsonProperty("processed_quantity")] 
+        [JsonPropertyName("processed_quantity")] 
         public int ProcessedQuantity { get; set; }
     }
 
     public class InstrumentShort
     {
-        [JsonProperty("title")] 
+        [JsonPropertyName("title")] 
         public string Title { get; set; }
 
-        [JsonProperty("isin")] 
+        [JsonPropertyName("isin")] 
         public string Isin { get; set; }
     }
 

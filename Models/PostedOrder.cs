@@ -1,42 +1,41 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 using LemonMarkets.Helper;
 using LemonMarkets.Models.Enums;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace LemonMarkets.Models
 {
     public class PostedOrder
     {
-        [JsonProperty("isin")] 
+        [JsonPropertyName("isin")] 
         public string Isin { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("valid_until")]
+        [JsonPropertyName("valid_until")]
         public DateTime ValidUntil { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("side")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("side")]
         public OrderSide Side { get; set; }
 
-        [JsonProperty("quantity")] 
+        [JsonPropertyName("quantity")] 
         public int Quantity { get; set; }
 
-        [JsonProperty("stop_price")] 
+        [JsonPropertyName("stop_price")] 
         public double? StopPrice { get; set; }
 
-        [JsonProperty("limit_price")] 
+        [JsonPropertyName("limit_price")] 
         public double? LimitPrice { get; set; }
 
-        [JsonProperty("uuid")] 
+        [JsonPropertyName("uuid")] 
         public string Uuid { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("status")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("status")]
         public OrderStatus Status { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [JsonProperty("trading_venue_mic")] 
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonPropertyName("trading_venue_mic")] 
         public Enums.TradingVenue Venue { get; set; }
     }
 }

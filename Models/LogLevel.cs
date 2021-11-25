@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LemonMarkets.Models
+﻿namespace LemonMarkets.Models
 {
     public enum LogLevel
     {

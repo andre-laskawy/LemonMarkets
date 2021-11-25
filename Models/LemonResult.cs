@@ -1,19 +1,17 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace LemonMarkets.Models
 {
     public class LemonResult<T> where T: class
     {
-        [JsonProperty("previous")]
+        [JsonPropertyName("previous")]
         public string Previous { get; set; }
 
-        [JsonProperty("next")]
+        [JsonPropertyName("next")]
         public string Next { get; set; }
 
-        [JsonProperty("results")]
+        [JsonPropertyName("results")]
         public List<T> Results { get; set; } = new List<T>();
     }
 }

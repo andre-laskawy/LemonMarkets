@@ -1,48 +1,47 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using LemonMarkets.Models.Enums;
+using System.Text.Json.Serialization;
 
 namespace LemonMarkets.Models
 {
     public class Instrument
     {
-        [JsonProperty("isin")]
+        [JsonPropertyName("isin")]
         public string ISIN { get; set; }
 
-        [JsonProperty("wkn")]
+        [JsonPropertyName("wkn")]
         public string WKN { get; set; }
 
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("symbol")]
+        [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
 
-        [JsonProperty("type")]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonPropertyName("type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public InstrumentType InstrumentType { get; set; }
 
-        [JsonProperty("currency")]
+        [JsonPropertyName("currency")]
         public string Currency { get; set; }
 
-        [JsonProperty("tradable")]
+        [JsonPropertyName("tradable")]
         public bool Tradable { get; set; }
 
-        [JsonProperty("trading_venues")]
+        [JsonPropertyName("trading_venues")]
         public List<TradingVenue> TradingVenues { get; set; } = new List<TradingVenue>();
 
     }
 
     public class TradingVenue
     {
-        [JsonProperty("title")]
+        [JsonPropertyName("title")]
         public string Title { get; set; }
 
-        [JsonProperty("mic")]
+        [JsonPropertyName("mic")]
         public string Mic { get; set; }
     }
 

@@ -4,6 +4,8 @@ using Newtonsoft.Json.Converters;
 
 namespace LemonMarkets.Helper
 {
+
+    //TODO: Change to System.Text.Json
     public class DoubleDateTimeJsonConverter: DateTimeConverterBase
     {
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)

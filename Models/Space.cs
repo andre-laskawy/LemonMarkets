@@ -1,29 +1,29 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace LemonMarkets.Models
 {
     public class Space
     {
-        [JsonProperty("uuid")] 
+        [JsonPropertyName("uuid")] 
         public string Uuid { get; set; }
 
-        [JsonProperty("name")] 
+        [JsonPropertyName("name")] 
         public string Name { get; set; }
 
-        [JsonProperty("state")] 
+        [JsonPropertyName("state")] 
         public State State { get; set; }
 
-        [JsonProperty("type")] 
+        [JsonPropertyName("type")] 
         public string Type { get; set; }
     }
 
 
     public class State
     {
-        [JsonProperty("balance")]
+        [JsonPropertyName("balance")]
         public string Balance { get; set; }
 
-        [JsonProperty("cash_to_invest")] 
+        [JsonPropertyName("cash_to_invest")] 
         public string CashToInvest { get; set; }
     }
 }
