@@ -5,7 +5,7 @@ namespace LemonMarkets.Models
 {
     public class OrderSearchFilter
     {
-        public string SpaceUuid
+        public string? SpaceUuid
         {
             get; set;
         }
@@ -40,7 +40,7 @@ namespace LemonMarkets.Models
             get; set;
         }
 
-        public string Isin
+        public string? Isin
         {
             get; set;
         }

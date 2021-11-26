@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.Json.Serialization;
-using LemonMarkets.Helper;
 using LemonMarkets.Models.Enums;
 
 namespace LemonMarkets.Models
@@ -13,7 +12,7 @@ namespace LemonMarkets.Models
             get; set;
         }
 
-        [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
+        //[JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonPropertyName("valid_until")]
         public DateTime ValidUntil
         {

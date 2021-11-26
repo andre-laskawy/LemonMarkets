@@ -16,7 +16,7 @@ namespace LemonMarkets.Repos.V1
 
         #region vars
 
-        private WsAPICore tradingApi;
+        private readonly WsAPICore tradingApi;
 
         #endregion vars
 
@@ -35,7 +35,7 @@ namespace LemonMarkets.Repos.V1
         {
             string route = $"orders/{request.OrderId}/activate";
 
-            LemonResult response = this.tradingApi.PostData<RequestActivateOrder, LemonResult>(request, route);
+            LemonResult? response = this.tradingApi.PostData<RequestActivateOrder, LemonResult>(request, route);
             if (response == null) return new LemonResult<Order>("response is null");
 
             return response;
@@ -50,13 +50,13 @@ namespace LemonMarkets.Repos.V1
 
         public LemonResult<Order> Create(RequestCreateOrder request)
         {
-            LemonResult<Order> response = this.tradingApi.PostData<RequestCreateOrder, LemonResult<Order>>(request, "orders");
+            LemonResult<Order>? response = this.tradingApi.PostData<RequestCreateOrder, LemonResult<Order>>(request, "orders");
             if (response == null) return new LemonResult<Order>("response is null");
 
             return response;
         }
 
-        public Task<LemonResults<Order>?> GetAsync(OrderSearchFilter request = null)
+        public Task<LemonResults<Order>?> GetAsync(OrderSearchFilter? request = null)
         {
             if (request == null) return this.tradingApi.GetAsync<LemonResults<Order>>("orders");
 

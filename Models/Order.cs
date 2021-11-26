@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.Json.Serialization;
-using LemonMarkets.Helper;
 using LemonMarkets.Models.Enums;
 
 namespace LemonMarkets.Models
@@ -13,14 +12,14 @@ namespace LemonMarkets.Models
             get; set;
         }
 
-        [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
+        //[JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonPropertyName("valid_until")]
         public DateTime ValidUntil
         {
             get; set;
         }
 
-        [JsonConverter(typeof(JsonStringEnumConverter ))]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         [JsonPropertyName("side")]
         public OrderSide Side
         {
@@ -64,7 +63,7 @@ namespace LemonMarkets.Models
             get; set;
         }
 
-        [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
+        //[JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonPropertyName("created_at")]
         public DateTime CreatedAt
         {
@@ -78,7 +77,7 @@ namespace LemonMarkets.Models
             get; set;
         }
 
-        [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
+        //[JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonPropertyName("processed_at")]
         public DateTime ProcessedAt
         {

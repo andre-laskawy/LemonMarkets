@@ -29,7 +29,7 @@ namespace LemonMarkets
 
         private static Semaphore semaphore = new Semaphore(1, 1);
 
-        private const string apiDataBaseUrl = "https://data.lemon.markets";
+        private static string apiDataBaseUrl = "https://data.lemon.markets";
         
         private static string apiPaperTradingBaseUrl = "https://paper-trading.lemon.markets";
 
@@ -64,6 +64,11 @@ namespace LemonMarkets
             get;
         }
 
+        public ISpacesRepo Spaces
+        {
+            get;
+        }
+
         #endregion get/set
 
         #region ctor
@@ -75,11 +80,14 @@ namespace LemonMarkets
 
             this.TradingApi = new WsAPICore(connectionInfo.TradingAdress, "v1");
             this.TradingApi.CheckCertEasy += Api_CheckCertEasy;
+            this.TradingApi.SetNewAuth ( apiKey );
             this.MarketDataApi = new WsAPICore(connectionInfo.MarketDataAdress, "v1");
             this.MarketDataApi.CheckCertEasy += Api_CheckCertEasy;
+            this.MarketDataApi.SetNewAuth ( apiKey );
 
             this.Orders = new OrdersRepo(this.TradingApi);
-        }      
+            this.Spaces = new SpaceRepo ( this.TradingApi );
+        }
 
         #endregion ctor
 
@@ -101,46 +109,14 @@ namespace LemonMarkets
         private bool Api_CheckCertEasy(string hostname, X509Certificate2 x509Certificate2, X509Chain x509Chain)
         {
             if (x509Chain.ChainStatus.Any(status => status.Status == X509ChainStatusFlags.UntrustedRoot)) return false;//Assert.Fail("certifcate has no trusted root");
-            if (!x509Certificate2.Subject.Contains(string.Format("CN={0}", hostname))) return false;//Assert.Fail("Hostname of the certificate not matched");
+            //if (!x509Certificate2.Subject.Contains(string.Format("CN={0}", hostname))) return false;//Assert.Fail("Hostname of the certificate not matched");
 
             return true;
         }
 
         #endregion events
 
-        public async Task<LemonResults<Space>> GetSpaces()
-        {
-            try
-            {
-                var requestUrl = apiTradingBaseUrl + "spaces";
-                var json = await MakeRequest(requestUrl, null, "GET");
-                var results = JsonConvert.DeserializeObject<LemonResults<Space>>(json);
-                return results;
-            }
-            catch
-            {
-                if (throwErrors) throw;
-                return null;
-            }
-        }
-
-        public async Task<Space> GetSpace(string uuid)
-        {
-            try
-            {
-                var requestUrl = apiTradingBaseUrl + "spaces/" + uuid + "/";
-                var json = await MakeRequest(requestUrl, null, "GET");
-                var result = JsonConvert.DeserializeObject<Space>(json);
-                return result;
-            }
-            catch
-            {
-                if (throwErrors) throw;
-                return null;
-            }
-        }
-
-        public async Task<ChartValue> GetDailyOHLC(string symbol)
+        /*public async Task<ChartValue> GetDailyOHLC(string symbol)
         {
             try
             {
@@ -271,8 +247,8 @@ namespace LemonMarkets
                 else
                     qryStr.Append("isin=" + string.Join(",", filter.SearchByIsins));
 
-                /*if (filter.TradingVenue.HasValue)
-                    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());*/
+                //if (filter.TradingVenue.HasValue)
+                //    qryStr.Append("&mic=" + filter.TradingVenue.GetValueOrDefault());
                     
                 if (filter.Currency.HasValue)
                     qryStr.Append("&currency=" + filter.Currency);
@@ -302,87 +278,7 @@ namespace LemonMarkets
                 if (throwErrors) throw;
                 return null;
             }
-        }
-
-        private async Task<string> MakeRequest(string url, Dictionary<string, string> payload = null, string method = "POST")
-        {
-            try
-            {
-                var client = await GetHttpClient();                
-                if (method == "POST")
-                {
-                    using (HttpContent formContent = new FormUrlEncodedContent(payload))
-                    {
-                        var r = await client.PostAsync(url, formContent).ConfigureAwait(false);
-                        r.EnsureSuccessStatusCode();
-                        return await r.Content.ReadAsStringAsync();
-                    }
-                }
-
-                if (method == "GET")
-                {
-                    var response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
-                }
-
-                if (method == "PUT")
-                {
-                    if (payload == null)
-                        payload = new Dictionary<string, string>();
-
-                    using (HttpContent formContent = new FormUrlEncodedContent(payload))
-                    {
-                        var r = await client.PutAsync(url, formContent).ConfigureAwait(false);
-                        r.EnsureSuccessStatusCode();
-                        return await r.Content.ReadAsStringAsync();
-                    }
-                }
-
-                if (method == "DELETE")
-                {
-                    var response = await client.DeleteAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
-                }
-
-                
-
-                throw new Exception("MakeRequest: Undefined METHOD");
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private async Task<HttpClient> GetHttpClient()
-        {
-            if (tokenExpireDate < DateTime.UtcNow)
-            {
-                try
-                {
-                    semaphore.WaitOne();
-                    var tokeResult = await GetLemonToken();
-                    tokenExpireDate = tokeResult.expireDate;
-
-                    if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    {
-                        httpClient.DefaultRequestHeaders.Remove("Authorization");
-                    }
-
-                    httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokeResult.Token);
-                }
-                catch
-                { }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }
-
-            return httpClient;
-        }
+        }*/
 
         #region enums
 

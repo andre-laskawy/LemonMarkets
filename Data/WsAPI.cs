@@ -19,15 +19,15 @@ namespace WsApiCore
 
         private Uri baseadress;
 
-        private Func<HttpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain, System.Net.Security.SslPolicyErrors, bool> certificateCheck;
-        private string version;
+        private Func<HttpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain, System.Net.Security.SslPolicyErrors, bool>? certificateCheck;
+        private string? version;
         private HttpClient client;
 
-        private event CheckZertifkat checkCertEasy;
+        private event CheckZertifkat? checkCertEasy;
 
-        private event HTTPStatuscode httpCode;
+        private event HTTPStatuscode? httpCode;
 
-        private event WsApiEvent beforeConnectToWebservice;
+        private event WsApiEvent? beforeConnectToWebservice;
 
         #endregion vars
 
@@ -99,7 +99,7 @@ namespace WsApiCore
             set;
         }
 
-        public Func<HttpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain, System.Net.Security.SslPolicyErrors, bool> CheckCertificate
+        public Func<HttpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain, System.Net.Security.SslPolicyErrors, bool>? CheckCertificate
         {
             get
             {
@@ -113,7 +113,7 @@ namespace WsApiCore
             }
         }
 
-        private AuthenticationHeaderValue Authorization
+        private AuthenticationHeaderValue? Authorization
         {
             get;
             set;
@@ -137,15 +137,12 @@ namespace WsApiCore
 
         #region ctor
 
-        public WsAPICore()
-        {
-            this.client = this.BuildHttpClient();
-        }
-
         public WsAPICore(string baseAdress, string apiPath = "")
         {
-            this.BaseAdress = baseAdress;
+            this.baseadress = new Uri(baseAdress);
             this.ApiPath = apiPath;
+
+            this.client = this.BuildHttpClient();
         }
 
         ~WsAPICore()
@@ -168,7 +165,7 @@ namespace WsApiCore
 
             this.Authorization = new AuthenticationHeaderValue(mode, Convert.ToBase64String(byteArray));
 
-            if (this.client != null) this.client.DefaultRequestHeaders.Authorization = this.Authorization;
+            this.client.DefaultRequestHeaders.Authorization = this.Authorization;
 
             return true;
         }
@@ -177,28 +174,26 @@ namespace WsApiCore
         {
             this.Authorization = new AuthenticationHeaderValue(mode, value);
 
-            if (this.client != null) this.client.DefaultRequestHeaders.Authorization = this.Authorization;
+            this.client.DefaultRequestHeaders.Authorization = this.Authorization;
 
             return true;
         }
 
-        public HttpResponseMessage SendManuelRequest(HttpRequestMessage request)
+        public Task<HttpResponseMessage> SendManuelRequest(HttpRequestMessage request)
         {
-            try
-            {
-                return client.SendAsync(request).Result;
-            }
-            catch
-            {
-                return null;
-            }
+            return this.client.SendAsync(request);
         }
 
-        private bool CheckCert(HttpRequestMessage httpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2 x509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain x509Chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
+        private bool CheckCert(HttpRequestMessage? httpRequestMessage, System.Security.Cryptography.X509Certificates.X509Certificate2 x509Certificate2, System.Security.Cryptography.X509Certificates.X509Chain x509Chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
         {
             if (this.checkCertEasy == null) return false;
 
-            string host = httpRequestMessage == null ? string.Empty : httpRequestMessage.RequestUri.Host;
+            string host = string.Empty;
+
+            if ( httpRequestMessage != null )
+            {
+                if ( httpRequestMessage.RequestUri != null ) host = httpRequestMessage.RequestUri.Host;
+            }
 
             return this.checkCertEasy(host, x509Certificate2, x509Chain);
         }
@@ -220,15 +215,13 @@ namespace WsApiCore
         {
             HttpClientHandler handler = this.BuildHandler();
 
-            HttpClient client = handler == null ? new HttpClient() : new HttpClient(handler);
-
-            //client.
+            HttpClient client = new HttpClient(handler);
 
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             if (this.Authorization != null) client.DefaultRequestHeaders.Authorization = this.Authorization;
 
-            if (this.baseadress != null) client.BaseAddress = this.baseadress;
+            client.BaseAddress = this.baseadress;
 
             if (this.version != null) client.DefaultRequestHeaders.Add("X-Version", this.version);
 
@@ -248,6 +241,22 @@ namespace WsApiCore
         }
 
         #region PutData
+        
+        
+        public async Task<B?> PutAsync<T, B> ( T data, string route )
+        {
+            string apiPath = $"{this.ApiPath}/{route}";
+
+            if (this.beforeConnectToWebservice != null) if (!this.beforeConnectToWebservice(this)) return default(B);
+
+            HttpResponseMessage httpResponse = await this.client.PostAsJsonAsync<T>(apiPath, data);
+
+            if (this.httpCode != null) this.httpCode(httpResponse.StatusCode);
+
+            if (!httpResponse.IsSuccessStatusCode) return default(B);
+
+            return await httpResponse.Content.ReadFromJsonAsync<B>();
+        }
 
         public T PutData<T>(T data) where T : IModelElement
         {
@@ -399,12 +408,12 @@ namespace WsApiCore
             return this.PostDataFromQuery<T>($"{this.ApiPath}/{route}", data);
         }
 
-        public B PostData<T, B>(T data, string route)
+        public B? PostData<T, B>(T data, string route)
         {
             return this.PostDataFromQuery<T, B>($"{this.ApiPath}/{route}", data);
         }
 
-        public async Task<B> PostAsync<T, B>(T data, string route)
+        public async Task<B?> PostAsync<T, B>(T data, string route)
         {
             string apiPath = $"{this.ApiPath}/{route}";
 
@@ -491,7 +500,7 @@ namespace WsApiCore
             return this.GetDataFromQuery<T>(query);
         }
 
-        public async IAsyncEnumerable<T> GetAsyncEnumerable<T>(params object[] header)
+        public async IAsyncEnumerable<T?> GetAsyncEnumerable<T>(params object[] header)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -504,9 +513,9 @@ namespace WsApiCore
 
             Stream stream = await this.GetStreamFromQueryAsync(sb.ToString());
 
-            IAsyncEnumerable<T> enumarble = JsonSerializer.DeserializeAsyncEnumerable<T>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultBufferSize = 128 });
+            IAsyncEnumerable<T?> enumarble = JsonSerializer.DeserializeAsyncEnumerable<T>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultBufferSize = 128 });
 
-            await foreach (T item in enumarble)
+            await foreach (T? item in enumarble)
             {
                 yield return item;
             }
@@ -525,7 +534,7 @@ namespace WsApiCore
             return await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
         }
 
-        public async Task<T> GetAsync<T>(params object[] header)
+        public Task<T?> GetAsync<T>(params object[] header)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -536,27 +545,20 @@ namespace WsApiCore
                 sb.Append($"/{elem}");
             }
 
-            return await this.GetDataFromQueryAsync<T>(sb.ToString());
+            return this.GetDataFromQueryAsync<T>(sb.ToString());
         }
 
-        private async Task<T> GetDataFromQueryAsync<T>(string query)
+        private async Task<T?> GetDataFromQueryAsync<T>(string query)
         {
-            try
-            {
-                if (this.beforeConnectToWebservice != null) if (!this.beforeConnectToWebservice(this)) return default(T);
+            if (this.beforeConnectToWebservice != null) if (!this.beforeConnectToWebservice(this)) return default(T);
 
-                HttpResponseMessage httpResponse = await this.client.GetAsync(query, HttpCompletionOption.ResponseHeadersRead);
+            HttpResponseMessage httpResponse = await this.client.GetAsync(query, HttpCompletionOption.ResponseHeadersRead);
 
-                if (this.httpCode != null) this.httpCode(httpResponse.StatusCode);
+            if (this.httpCode != null) this.httpCode(httpResponse.StatusCode);
 
-                if (!httpResponse.IsSuccessStatusCode) return default(T);
+            if (!httpResponse.IsSuccessStatusCode) return default(T);
 
-                return await httpResponse.Content.ReadFromJsonAsync<T>();
-            }
-            catch (Exception e)
-            {
-                return default(T);
-            }
+            return await httpResponse.Content.ReadFromJsonAsync<T>();
         }
 
         private T GetDataFromQuery<T>(string query)
@@ -584,7 +586,7 @@ namespace WsApiCore
         #region Delete
 
 
-        public Task<T> DeleteAsync<T>(params object[] header)
+        public Task<T?> DeleteAsync<T>(params object[] header)
         {
             string query = this.ApiPath;
 
@@ -596,7 +598,7 @@ namespace WsApiCore
             return this.DeleteFromQueryAsync<T>(query);
         }
 
-        private async Task<T> DeleteFromQueryAsync<T>(string query)
+        private async Task<T?> DeleteFromQueryAsync<T>(string query)
         {
             if (this.beforeConnectToWebservice != null) if (!this.beforeConnectToWebservice(this)) return default(T);
 

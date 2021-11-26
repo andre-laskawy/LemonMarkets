@@ -16,7 +16,7 @@ namespace LemonMarkets.Interfaces
 
         Task<LemonResult<Order>?> CreateAsync(RequestCreateOrder request);
 
-        Task<LemonResults<Order>?> GetAsync(OrderSearchFilter request = null);
+        Task<LemonResults<Order>?> GetAsync(OrderSearchFilter? request = null);
 
         Task<LemonResult<Order>?> GetAsync(string id);
 

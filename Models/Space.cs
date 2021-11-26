@@ -1,47 +1,90 @@
 ﻿using System.Text.Json.Serialization;
+using LemonMarkets.Models.Enums;
 
 namespace LemonMarkets.Models
 {
     public class Space
     {
-        [JsonPropertyName("uuid")] 
-        public string Uuid
+        
+        /// <summary>
+        /// Space ID
+        /// </summary>
+        public string Id
         {
             get; set;
         }
 
-        [JsonPropertyName("name")] 
+        /// <summary>
+        /// Name of Space
+        /// </summary>
         public string Name
         {
             get; set;
         }
 
-        [JsonPropertyName("state")] 
-        public State State
+        /// <summary>
+        /// Description of Space
+        /// </summary>
+        public string Description
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Space Type: Paper Money or Real Money
+        /// </summary>
+        [JsonPropertyName("type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public SpaceType Type
         {
             get; set;
         }
 
-        [JsonPropertyName("type")] 
-        public string Type
+        /// <summary>
+        /// Amount of Risk Limit
+        /// </summary>
+        public int Risk_limit
         {
-            get; set;
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Your current Profit
+        /// </summary>
+        public int Earnings
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Risk Limit - Backfire - pending Orders
+        /// </summary>
+        public int Buying_power
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Combined Expenses and Losses
+        /// </summary>
+        public int Backfire
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Real Money Spaces only: potential linked Paper Money Space
+        /// </summary>
+        public string Linked
+        {
+            get;
+            set;
         }
     }
 
-
-    public class State
-    {
-        [JsonPropertyName("balance")]
-        public string Balance
-        {
-            get; set;
-        }
-
-        [JsonPropertyName("cash_to_invest")] 
-        public string CashToInvest
-        {
-            get; set;
-        }
-    }
 }

@@ -20,5 +20,10 @@ namespace LemonMarkets.Interfaces
             get;
         }
 
+        ISpacesRepo Spaces
+        {
+            get;
+        }
+
     }
 }
