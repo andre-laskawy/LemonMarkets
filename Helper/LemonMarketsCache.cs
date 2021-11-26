@@ -15,9 +15,15 @@ namespace LemonMarkets.Helper
 
         private static LemonApi api;
 
-        public static ConcurrentDictionary<string, List<ChartValue>> ChartCache { get; set; } = new ConcurrentDictionary<string, List<ChartValue>>();
+        public static ConcurrentDictionary<string, List<ChartValue>> ChartCache
+        {
+            get; set;
+        } = new ConcurrentDictionary<string, List<ChartValue>>();
 
-        public static ConcurrentDictionary<string, Semaphore> Semaphores { get; set; } = new ConcurrentDictionary<string, Semaphore>();
+        public static ConcurrentDictionary<string, Semaphore> Semaphores
+        {
+            get; set;
+        } = new ConcurrentDictionary<string, Semaphore>();
 
         public static ILemonLogger logger;
 

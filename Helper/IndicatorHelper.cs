@@ -11,9 +11,15 @@ namespace LemonMarkets.Helper
 {
     public static class IndicatorHelper
     {
-        public static int CacheTimeInMinutes { get; set; } = 60 * 6;
+        public static int CacheTimeInMinutes
+        {
+            get; set;
+        } = 60 * 6;
 
-        public static ConcurrentDictionary<string, LemonIndicators> Cache { get; set; } = new ConcurrentDictionary<string, LemonIndicators>();
+        public static ConcurrentDictionary<string, LemonIndicators> Cache
+        {
+            get; set;
+        } = new ConcurrentDictionary<string, LemonIndicators>();
 
         public static async Task<LemonIndicators> GetIndicators(string isin, Func<Task<List<ChartValue>>> valueFunc, int periodTimeInMinutes)
         {

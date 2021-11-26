@@ -68,7 +68,7 @@ namespace LemonMarkets
             }
         }
 
-        public async Task<PostedOrder> PostOrder(PostOrderQuery query)
+        public async Task<PostedOrder> PostOrder(RequestCreateOrder query)
         {
             try
             {
@@ -133,13 +133,13 @@ namespace LemonMarkets
             }
         }
 
-        public async Task<LemonResult<Space>> GetSpaces()
+        public async Task<LemonResults<Space>> GetSpaces()
         {
             try
             {
                 var requestUrl = apiTradingBaseUrl + "spaces";
                 var json = await MakeRequest(requestUrl, null, "GET");
-                var results = JsonConvert.DeserializeObject<LemonResult<Space>>(json);
+                var results = JsonConvert.DeserializeObject<LemonResults<Space>>(json);
                 return results;
             }
             catch
@@ -165,7 +165,7 @@ namespace LemonMarkets
             }
         }
 
-        public async Task<LemonResult<Order>> GetOrders(OrderSearchFilter filter)
+        public async Task<LemonResults<Order>> GetOrders(OrderSearchFilter filter)
         {
             try
             {
@@ -188,13 +188,13 @@ namespace LemonMarkets
                 if (parameters.Any())
                     requestUrl += "?" + string.Join("&", parameters);
 
-                var result = new LemonResult<Order>();
+                var result = new LemonResults<Order>();
 
                 var hasNextPage = true;
                 while (hasNextPage)
                 {
                     var json = await MakeRequest(requestUrl, null, "GET");
-                    var res = JsonConvert.DeserializeObject<LemonResult<Order>>(json);
+                    var res = JsonConvert.DeserializeObject<LemonResults<Order>>(json);
                     hasNextPage = filter.WithPaging && !string.IsNullOrEmpty(res.Next);
                     if (!hasNextPage)
                         return res;
@@ -225,7 +225,7 @@ namespace LemonMarkets
                 var url = $"{apiDataBaseUrl}ohlc/d1?isin={symbol}";
                 var json = await MakeRequest(url, null, "GET");
 
-                var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
+                var response = JsonConvert.DeserializeObject<LemonResults<ChartValue>>(json);
                 return response.Results.FirstOrDefault();
             }
             catch
@@ -291,7 +291,7 @@ namespace LemonMarkets
                     try
                     {
                         var json = await MakeRequest(url, null, "GET");
-                        var response = JsonConvert.DeserializeObject<LemonResult<ChartValue>>(json);
+                        var response = JsonConvert.DeserializeObject<LemonResults<ChartValue>>(json);
 
                         foreach (var c in response.Results)
                         {
@@ -335,11 +335,11 @@ namespace LemonMarkets
             return result.OrderBy(p => p.Created).ToList();
         }
 
-        public async Task<LemonResult<Instrument>> Search(InstrumentSearchFilter filter)
+        public async Task<LemonResults<Instrument>> Search(InstrumentSearchFilter filter)
         {
             try
             {
-                var resultSet = new LemonResult<Instrument>(){Results = new List<Instrument>()};
+                var resultSet = new LemonResults<Instrument>(){Results = new List<Instrument>()};
 
                 var requestUrl = apiDataBaseUrl + "instruments?";
                 
@@ -364,7 +364,7 @@ namespace LemonMarkets
                 while (hasNextPage)
                 {
                     var json = await MakeRequest(reqUrl, null, "GET");
-                    var results = JsonConvert.DeserializeObject<LemonResult<Instrument>>(json);
+                    var results = JsonConvert.DeserializeObject<LemonResults<Instrument>>(json);
                     resultSet.Next = results.Next;
                     resultSet.Previous = results.Previous;
 
