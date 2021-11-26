@@ -142,20 +142,10 @@ namespace WsApiCore
             this.client = this.BuildHttpClient();
         }
 
-        public WsAPICore(string username, string password)
+        public WsAPICore(string baseAdress, string apiPath = "")
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password)) return;
-
-            this.SetNewAuth(username, password);
-
-            this.client = this.BuildHttpClient();
-        }
-
-        public WsAPICore(byte[] token, byte[] hashpassword)
-        {
-            this.SetNewAuth(token, hashpassword);
-
-            this.client = this.BuildHttpClient();
+            this.BaseAdress = baseAdress;
+            this.ApiPath = apiPath;
         }
 
         ~WsAPICore()
@@ -177,6 +167,15 @@ namespace WsApiCore
             byte[] byteArray = Encoding.ASCII.GetBytes(username + ":" + password);
 
             this.Authorization = new AuthenticationHeaderValue(mode, Convert.ToBase64String(byteArray));
+
+            if (this.client != null) this.client.DefaultRequestHeaders.Authorization = this.Authorization;
+
+            return true;
+        }
+
+        public bool SetNewAuth(string value, string mode = "Bearer")
+        {
+            this.Authorization = new AuthenticationHeaderValue(mode, value);
 
             if (this.client != null) this.client.DefaultRequestHeaders.Authorization = this.Authorization;
 
@@ -583,6 +582,32 @@ namespace WsApiCore
         #endregion GetData
 
         #region Delete
+
+
+        public Task<T> DeleteAsync<T>(params object[] header)
+        {
+            string query = this.ApiPath;
+
+            foreach (object elem in header)
+            {
+                query += $"/{elem.ToString()}";
+            }
+
+            return this.DeleteFromQueryAsync<T>(query);
+        }
+
+        private async Task<T> DeleteFromQueryAsync<T>(string query)
+        {
+            if (this.beforeConnectToWebservice != null) if (!this.beforeConnectToWebservice(this)) return default(T);
+
+            HttpResponseMessage httpResponse = await this.client.DeleteAsync(query);
+
+            if (this.httpCode != null) this.httpCode(httpResponse.StatusCode);
+
+            if (!httpResponse.IsSuccessStatusCode) return default(T);
+
+            return await httpResponse.Content.ReadFromJsonAsync<T>();
+        }
 
         public T Delete<T>()
         {

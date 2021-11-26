@@ -25,11 +25,27 @@ namespace LemonMarkets.Models.Responses
 
         public bool IsOk
         {
-            get;
-            set;
+            get
+            {
+                return this.Status == "ok";
+            }
         }
 
         #endregion get/set
+
+        #region ctor
+
+        public LemonResult()
+        {
+
+        }
+
+        public LemonResult(string status)
+        {
+            this.Status = status;
+        }
+
+        #endregion ctor
 
     }
 }

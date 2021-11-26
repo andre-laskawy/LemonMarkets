@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using LemonMarkets.Models.Enums;
 
-namespace LemonMarkets.Models
+namespace LemonMarkets.Models.Requests.Trading
 {
     public class RequestCreateOrder
     {

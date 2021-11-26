@@ -13,12 +13,26 @@ namespace LemonMarkets.Models.Responses
         #region get/set
 
         [JsonPropertyName("results")]
-        public T Results
+        public T? Results
         {
             get; set;
         }
 
         #endregion get/set
+
+        #region ctor
+
+        public LemonResult()
+        {
+
+        }
+
+        public LemonResult(string status) : base(status)
+        {
+
+        }
+
+        #endregion ctor
 
     }
 }

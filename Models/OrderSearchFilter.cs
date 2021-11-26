@@ -30,7 +30,17 @@ namespace LemonMarkets.Models
             get; set;
         }
 
+        public OrderStatus Status
+        {
+            get; set;
+        }
+
         public bool WithPaging
+        {
+            get; set;
+        }
+
+        public string Isin
         {
             get; set;
         }
