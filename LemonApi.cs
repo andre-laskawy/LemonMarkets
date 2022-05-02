@@ -26,25 +26,20 @@ namespace LemonMarkets
     {
         private static bool throwErrors;
 
-        private static Semaphore semaphore = new Semaphore(1, 1);
+        private static string token;
 
-        private static HttpClient httpClient = null;
-
-        private static string clientId, clientSecret;
-
-        private static DateTime tokenExpireDate;
-
-        private static string apiDataBaseUrl = "https://paper-data.lemon.markets/v1/";
+        private static string apiDataBaseUrl = "https://data.lemon.markets/v1/";
         
         private static string apiTradingBaseUrl = "https://paper-trading.lemon.markets/rest/v1/";
 
         public LemonApi()
         { }
 
-        public static async Task Init(string lemonClientId, string lemonClientSecret, bool throwExceptions = true)
+        public static void Init(string bearerToken, bool throwExceptions = true)
         {
             try
             {
+                token = bearerToken;
                 throwErrors = throwExceptions;
                 ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
@@ -53,14 +48,6 @@ namespace LemonMarkets
                     ServerCertificateCustomValidationCallback = (message, certificate2, arg3, arg4) => true,
                     SslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Ssl2 | SslProtocols.Ssl3
                 };
-
-                httpClient = new HttpClient(httpClientHandler);
-                clientId = lemonClientId;
-                clientSecret = lemonClientSecret;
-
-                var tokenResult = await GetLemonToken();
-                tokenExpireDate = tokenResult.expireDate;
-                httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokenResult.Token);
             }
             catch (Exception ex)
             {
@@ -253,18 +240,6 @@ namespace LemonMarkets
                     ask = first.GetValue<double>("a");
                 }
 
-                // if no value is retured use the latest market close value
-                if (bid == 0)
-                {
-                    url = $"{apiDataBaseUrl}ohlc/m1?isin={isin}";
-                    json = await MakeRequest(url, null, "GET");
-                    jObject = JObject.Parse(json);
-                    data = jObject.Get("results") as JArray;
-                    first = data.First as JObject;
-
-                    return (first.GetValue<double>("c"), first.GetValue<double>("c"));
-                }
-
                 return (ask, bid);
             }
             catch
@@ -280,13 +255,10 @@ namespace LemonMarkets
             try
             {
                 to = to ?? DateTime.UtcNow;
-                var defaultDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-                var currentDT = from;
+                var utcTime = HttpUtility.UrlEncode(from.ToUniversalTime().ToString("s", CultureInfo.InvariantCulture));
+                string url = $"{apiDataBaseUrl}ohlc/m1/?mic=XMUN&isin={isin}&from={utcTime}&decimals=true&epoch=false&sorting=asc&limit=250";
 
-                long unixTime = ((DateTimeOffset)from).ToUnixTimeMilliseconds();
-                string url = $"{apiDataBaseUrl}ohlc/m1/?isin={isin}&from={unixTime}&ordering=date";
-
-                while (currentDT <= to)
+                while (from <= to)
                 {
                     try
                     {
@@ -295,29 +267,26 @@ namespace LemonMarkets
 
                         foreach (var c in response.Results)
                         {
-                            currentDT = DateTime.Parse(c.Timestamp).ToUniversalTime();
-                            if (currentDT <= to)
+                            from = DateTime.Parse(c.Timestamp).ToUniversalTime();
+                            if (from <= to)
                             {
-                                c.Created = currentDT;
+                                c.Created = from;
                                 c.Symbol = isin;
                                 result.Add(c);
                             }
                         }
 
-                        if (url.Contains("to="))
+                        if (response.Next is null
+                            && from <= to)
                         {
-                            var prevUrl = response.Previous;
-                            var dateUntilIdx = prevUrl.IndexOf("to=");
-                            var prevDateUnix = prevUrl.Substring(dateUntilIdx + 3).Replace(".0", string.Empty);
-                            var datePrev = defaultDate.AddMilliseconds(long.Parse(prevDateUnix));
-
-                            if (datePrev > to)
-                            {
-                                break;
-                            }
+                            from = from.AddHours(3);
+                            utcTime = HttpUtility.UrlEncode(from.ToUniversalTime().ToString("s", CultureInfo.InvariantCulture));
+                            url = $"{apiDataBaseUrl}ohlc/m1/?mic=XMUN&isin={isin}&from={utcTime}&decimals=true&epoch=false&sorting=asc&limit=250";
                         }
-
-                        url = response.Next;
+                        else
+                        {
+                            url = response.Next;
+                        }
                     }
                     catch
                     {
@@ -386,12 +355,15 @@ namespace LemonMarkets
         {
             try
             {
-                var client = await GetHttpClient();                
+                var httpClient = HttpClientFactory.Create();
+                httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
                 if (method == "POST")
                 {
                     using (HttpContent formContent = new FormUrlEncodedContent(payload))
                     {
-                        var r = await client.PostAsync(url, formContent).ConfigureAwait(false);
+                        var r = await httpClient.PostAsync(url, formContent).ConfigureAwait(false);
                         r.EnsureSuccessStatusCode();
                         return await r.Content.ReadAsStringAsync();
                     }
@@ -399,7 +371,7 @@ namespace LemonMarkets
 
                 if (method == "GET")
                 {
-                    var response = await client.GetAsync(url);
+                    var response = await httpClient.GetAsync(url);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
@@ -411,7 +383,7 @@ namespace LemonMarkets
 
                     using (HttpContent formContent = new FormUrlEncodedContent(payload))
                     {
-                        var r = await client.PutAsync(url, formContent).ConfigureAwait(false);
+                        var r = await httpClient.PutAsync(url, formContent).ConfigureAwait(false);
                         r.EnsureSuccessStatusCode();
                         return await r.Content.ReadAsStringAsync();
                     }
@@ -419,12 +391,12 @@ namespace LemonMarkets
 
                 if (method == "DELETE")
                 {
-                    var response = await client.DeleteAsync(url);
+                    var response = await httpClient.DeleteAsync(url);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
 
-                
+
 
                 throw new Exception("MakeRequest: Undefined METHOD");
             }
@@ -432,67 +404,6 @@ namespace LemonMarkets
             {
                 throw;
             }
-        }
-
-        private async Task<HttpClient> GetHttpClient()
-        {
-            if (tokenExpireDate < DateTime.UtcNow)
-            {
-                try
-                {
-                    semaphore.WaitOne();
-                    var tokeResult = await GetLemonToken();
-                    tokenExpireDate = tokeResult.expireDate;
-
-                    if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    {
-                        httpClient.DefaultRequestHeaders.Remove("Authorization");
-                    }
-
-                    httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokeResult.Token);
-                }
-                catch
-                { }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }
-
-            return httpClient;
-        }
-
-        private static async Task<(string Token, DateTime expireDate)> GetLemonToken()
-        {
-            var result = string.Empty;
-            var expireDate = DateTime.UtcNow;
-            try
-            {
-                var data = new Dictionary<string, string>();
-                data.Add("client_id", clientId);
-                data.Add("client_secret", clientSecret);
-                data.Add("grant_type", "client_credentials");
-
-                string url = "https://auth.lemon.markets/oauth2/token";
-                var client = new HttpClient();
-
-                using (HttpContent formContent = new FormUrlEncodedContent(data))
-                {
-                    var response = await client.PostAsync(url, formContent).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
-                    var json = await response.Content.ReadAsStringAsync();
-                    var jObject = JObject.Parse(json);
-                    result = jObject.GetValue<string>("access_token");
-                    var expire = jObject.GetValue<double>("expires_in");
-                    expireDate = expireDate.AddSeconds(expire - 60); // subscract a little delay to ensure a smooth token refresh
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-
-            return (result, expireDate);
         }
     }
 }
