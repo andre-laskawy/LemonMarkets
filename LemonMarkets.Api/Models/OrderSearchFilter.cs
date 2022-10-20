@@ -5,7 +5,7 @@ namespace LemonMarkets.Models
 {
     public class OrderSearchFilter
     {
-        public string SpaceUuid { get; set; }
+        public string Isin { get; set; }
 
         public OrderSide Side { get; set; }
 

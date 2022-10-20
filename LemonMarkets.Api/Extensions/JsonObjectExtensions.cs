@@ -71,7 +71,7 @@
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
             }
 
