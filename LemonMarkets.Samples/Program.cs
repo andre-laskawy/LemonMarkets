@@ -33,11 +33,34 @@ var streamingExample = new Func<Task>(async () =>
     }
 });
 
-var testOrders = new Func<Task>(async () =>
+var testMakeOrder = new Func<Task>(async () =>
 {
     try
     {
-        var api = LemonApiFactory.Create();
+        var api = LemonApiFactory.Create(true);
+        var order = await api.PostOrder(new LemonMarkets.Models.PostOrderQuery()
+        {
+            Isin = "DE0005557508",
+            Quantity = 10,
+            Side = LemonMarkets.Models.Enums.OrderSide.Buy,
+            ValidUntil = DateTime.UtcNow.AddHours(1),
+        });
+
+        var result = await api.ActivateOrder(order.Results.First().Uuid);
+        if (!result) throw new Exception("Failed to activate order");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Order Example failed: {ex.Message}");
+        throw;
+    }
+});
+
+var testGetOrders = new Func<Task>(async () =>
+{
+    try
+    {
+        var api = LemonApiFactory.Create(true);
         var orders = await api.GetOrders(new LemonMarkets.Models.OrderSearchFilter() { Type = LemonMarkets.Models.Enums.OrderType.All });
         foreach (var o in orders.Results)
         {
@@ -59,12 +82,18 @@ try
     await LemonApiFactory.Init(token, true, true);
     Console.WriteLine("Lemon Api Test initialized succesfully.");
 
+    await testGetOrders();
+
     Console.WriteLine("Subscribe to Lemon Markets User Channel...");
     await streamingExample();
     Console.WriteLine("User Channel initialized succesfully.");
 
+    Console.WriteLine("Try to make order...");
+    await testMakeOrder();
+    Console.WriteLine("Order made succesfully.");
+
     Console.WriteLine("Try to get orders...");
-    await testOrders();
+    await testGetOrders();
     Console.WriteLine("Orders received succesfully.");
 
     Console.WriteLine("Lemon Api Test finished succesfully.");

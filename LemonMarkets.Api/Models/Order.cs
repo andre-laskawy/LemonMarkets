@@ -12,7 +12,7 @@ namespace LemonMarkets.Models
         public InstrumentShort Instrument { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("valid_until")]
+        [JsonProperty("expires_at")]
         public DateTime ValidUntil { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
@@ -28,7 +28,7 @@ namespace LemonMarkets.Models
         [JsonProperty("limit_price")] 
         public double? LimitPrice { get; set; }
 
-        [JsonProperty("uuid")] 
+        [JsonProperty("id")] 
         public string Uuid { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]

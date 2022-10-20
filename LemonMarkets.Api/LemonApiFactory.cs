@@ -70,9 +70,9 @@ namespace LemonMarkets
             }
         }
 
-        public static LemonApi Create()
+        public static LemonApi Create(bool usePaperTrading = false)
         {
-            return new LemonApi();
+            return new LemonApi(usePaperTrading);
         }
     }
 }

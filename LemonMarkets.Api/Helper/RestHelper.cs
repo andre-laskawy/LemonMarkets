@@ -25,6 +25,7 @@ namespace LemonMarkets.Helper
             Dictionary<string, string> payload = null, 
             string method = "POST")
         {
+            HttpResponseMessage responseMessage = null;
             try
             {
                 var httpClient = HttpClientFactory.Create();
@@ -41,41 +42,41 @@ namespace LemonMarkets.Helper
                 {
                     using (HttpContent formContent = new FormUrlEncodedContent(payload))
                     {
-                        var r = await httpClient.PostAsync(url, formContent).ConfigureAwait(false);
-                        r.EnsureSuccessStatusCode();
-                        return await r.Content.ReadAsStringAsync();
+                        responseMessage = await httpClient.PostAsync(url, formContent).ConfigureAwait(false);
+                        responseMessage.EnsureSuccessStatusCode();
+                        return await responseMessage.Content.ReadAsStringAsync();
                     }
                 }
 
                 if (method == "GET")
                 {
-                    var response = await httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
+                    responseMessage = await httpClient.GetAsync(url);
+                    responseMessage.EnsureSuccessStatusCode();
+                    return await responseMessage.Content.ReadAsStringAsync();
                 }
 
                 if (method == "PUT")
                 {
                     using (HttpContent formContent = new FormUrlEncodedContent(payload))
                     {
-                        var r = await httpClient.PutAsync(url, formContent).ConfigureAwait(false);
-                        r.EnsureSuccessStatusCode();
-                        return await r.Content.ReadAsStringAsync();
+                        responseMessage = await httpClient.PutAsync(url, formContent).ConfigureAwait(false);
+                        responseMessage.EnsureSuccessStatusCode();
+                        return await responseMessage.Content.ReadAsStringAsync();
                     }
                 }
 
                 if (method == "DELETE")
                 {
-                    var response = await httpClient.DeleteAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
+                    responseMessage = await httpClient.DeleteAsync(url);
+                    responseMessage.EnsureSuccessStatusCode();
+                    return await responseMessage.Content.ReadAsStringAsync();
                 }
 
                 throw new Exception("MakeRequest: Undefined METHOD");
             }
             catch
             {
-                throw;
+                throw new Exception($"HTTP Error: {responseMessage.StatusCode}: {await responseMessage.Content.ReadAsStringAsync()}");
             }
         }
     }

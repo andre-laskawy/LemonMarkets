@@ -39,15 +39,22 @@ namespace LemonMarkets
 
         private static string apiDataBaseUrl = "https://data.lemon.markets/v1/";
 
-        private static string apiTradingBaseUrl = "https://paper-trading.lemon.markets/v1/";
+        private static string apiPaperTradingBaseUrl = "https://paper-trading.lemon.markets/v1/";
+
+        private static string apiTradingBaseUrl = "https://trading.lemon.markets/v1/";
+
+        public LemonApi(bool usePaperTrading = false)
+        {
+            apiTradingBaseUrl = usePaperTrading ? apiPaperTradingBaseUrl : apiTradingBaseUrl;
+        }
 
         // Orders
 
-        public async Task<PostedOrder> PostOrder(PostOrderQuery query)
+        public async Task<LemonResult<PostedOrder>> PostOrder(PostOrderQuery query)
         {
             try
             {
-                var requestUrl = apiTradingBaseUrl + "spaces/" + query.SpaceUuid + "/orders/";
+                var requestUrl = apiTradingBaseUrl + "orders";
 
                 if (query.ValidUntil < DateTime.UtcNow)
                     throw new Exception("Can't post order: Valid Until < now");
@@ -57,7 +64,7 @@ namespace LemonMarkets
                 var qryParams = new Dictionary<string, string>
                 {
                     {"isin", query.Isin},
-                    {"valid_until", query.ValidUntil.ToUnixDt().ToString()},
+                    {"expires_at",  query.ValidUntil.ToUniversalTime().ToString("s", CultureInfo.InvariantCulture) },
                     {"side", query.Side.ToString().ToLower()},
                     {"quantity", query.Quantity.ToString()}
                 };
@@ -67,8 +74,8 @@ namespace LemonMarkets
                 if (query.LimitPrice.HasValue)
                     qryParams.Add("limit_price", query.LimitPrice.Value.ToString(CultureInfo.InvariantCulture));
 
-                var json = await requestUrl.MakeRequest(qryParams);
-                var result = JsonConvert.DeserializeObject<PostedOrder>(json);
+                var json = await requestUrl.MakeRequest(qryParams, "POST");
+                var result = JsonConvert.DeserializeObject<LemonResult<PostedOrder>>(json);
                 return result;
             }
             catch
@@ -78,11 +85,11 @@ namespace LemonMarkets
             }
         }
 
-        public async Task<bool> DeleteOrder(string spaceUuid, string orderUuid)
+        public async Task<bool> DeleteOrder(string orderUuid)
         {
             try
             {
-                var requestUrl = apiTradingBaseUrl + "spaces/" + spaceUuid + "/orders/" + orderUuid + "/";
+                var requestUrl = apiTradingBaseUrl + "orders/" + orderUuid + "/";
                 var json = await requestUrl.MakeRequest(null, "DELETE");
                 return true;
             }
@@ -93,12 +100,12 @@ namespace LemonMarkets
             }
         }
 
-        public async Task<bool> ActivateOrder(string spaceUuid, string orderUuid)
+        public async Task<bool> ActivateOrder(string orderUuid)
         {
             try
             {
-                var requestUrl = apiTradingBaseUrl + "spaces/" + spaceUuid + "/orders/" + orderUuid + "/activate";
-                var json = await requestUrl.MakeRequest(null, "PUT");
+                var requestUrl = apiTradingBaseUrl + "orders/" + orderUuid + "/activate";
+                var json = await requestUrl.MakeRequest(null, "POST");
                 return true;
             }
             catch
@@ -120,9 +127,9 @@ namespace LemonMarkets
                 var parameters = new List<string>();
 
                 if (filter.From.HasValue)
-                    parameters.Add("created_at_from=" + filter.From.ToUnixDt());
+                    parameters.Add("from=" + filter.From.ToUnixDt());
                 if (filter.To.HasValue)
-                    parameters.Add("created_at_until=" + filter.To.ToUnixDt());
+                    parameters.Add("to=" + filter.To.ToUnixDt());
                 if (filter.Side != OrderSide.All)
                     parameters.Add("side=" + filter.Side.ToString().ToLower());
                 if (filter.Type != OrderType.All)
