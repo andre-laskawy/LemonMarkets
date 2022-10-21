@@ -1,7 +1,7 @@
 ﻿// S    ee https://aka.ms/new-console-template for more information
 using LemonMarkets;
 
-string token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJsZW1vbi5tYXJrZXRzIiwiaXNzIjoibGVtb24ubWFya2V0cyIsInN1YiI6InVzcl9weVBWVzIyV1dWWEt0Q1lSMHlXM2xEbUszdzBiclNoNnJzIiwiZXhwIjoxNjY4NjIwNjQzLCJpYXQiOjE2MzcwODQ2NDMsImp0aSI6ImFwa19weVBWVzMzRkZLNWs3NW5ibGtEY1d5Z1pndDQ3aDVuRndnIn0.v5JttuACxkHE6Stuh_-JLoYB1DNGueDLu68SNh7KHyU";
+string token = Environment.GetEnvironmentVariable("LemonToken") ?? "";
 
 var streamingExample = new Func<Task>(async () =>
 {
