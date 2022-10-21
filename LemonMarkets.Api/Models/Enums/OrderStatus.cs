@@ -14,6 +14,6 @@ namespace LemonMarkets.Models.Enums
         Executed = 5,
         Deleted = 6,
         Expired = 7,
-        Ok = 8
+        Canceled = 8
     }
 }

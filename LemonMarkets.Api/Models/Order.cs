@@ -8,8 +8,11 @@ namespace LemonMarkets.Models
 {
     public class Order
     {
-        [JsonProperty("instrument")] 
-        public InstrumentShort Instrument { get; set; }
+        [JsonProperty("isin_title")]
+        public string Title { get; set; }
+
+        [JsonProperty("isin")]
+        public string Isin { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonProperty("expires_at")]
@@ -35,8 +38,8 @@ namespace LemonMarkets.Models
         [JsonProperty("status")]
         public OrderStatus Status { get; set; }
 
-        [JsonProperty("average_price")] 
-        public double? AveragePrice { get; set; }
+        [JsonProperty("executed_price")] 
+        public double? ExecutedPrice { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
         [JsonProperty("created_at")]
@@ -47,20 +50,10 @@ namespace LemonMarkets.Models
         public OrderType Type { get; set; }
 
         [JsonConverter(typeof(DoubleDateTimeJsonConverter))]
-        [JsonProperty("processed_at")]
-        public DateTime ProcessedAt { get; set; }
+        [JsonProperty("executed_at")]
+        public DateTime ExecutedAt { get; set; }
 
-        [JsonProperty("processed_quantity")] 
-        public int ProcessedQuantity { get; set; }
+        [JsonProperty("executed_quantity")] 
+        public int ExecutedQuantity { get; set; }
     }
-
-    public class InstrumentShort
-    {
-        [JsonProperty("title")] 
-        public string Title { get; set; }
-
-        [JsonProperty("isin")] 
-        public string Isin { get; set; }
-    }
-
 }

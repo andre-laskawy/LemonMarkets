@@ -50,7 +50,7 @@ namespace LemonMarkets
 
         // Orders
 
-        public async Task<LemonResult<PostedOrder>> PostOrder(PostOrderQuery query)
+        public async Task<SingleLemonResult<PostedOrder>> PostOrder(PostOrderQuery query)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace LemonMarkets
                     qryParams.Add("limit_price", query.LimitPrice.Value.ToString(CultureInfo.InvariantCulture));
 
                 var json = await requestUrl.MakeRequest(qryParams, "POST");
-                var result = JsonConvert.DeserializeObject<LemonResult<PostedOrder>>(json);
+                var result = JsonConvert.DeserializeObject<SingleLemonResult<PostedOrder>>(json);
                 return result;
             }
             catch
@@ -168,11 +168,11 @@ namespace LemonMarkets
         {
             try
             {
-                var url = $"{apiDataBaseUrl}order/{orderUuid}";
+                var url = $"{apiTradingBaseUrl}orders/{orderUuid}";
                 var json = await url.MakeRequest(null, "GET");
 
-                var response = JsonConvert.DeserializeObject<LemonResult<Order>>(json);
-                return response.Results.FirstOrDefault();
+                var response = JsonConvert.DeserializeObject<SingleLemonResult<Order>>(json);
+                return response.Result;
             }
             catch
             {

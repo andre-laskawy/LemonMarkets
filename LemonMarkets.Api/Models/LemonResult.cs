@@ -16,4 +16,16 @@ namespace LemonMarkets.Models
         [JsonProperty("results")]
         public List<T> Results { get; set; } = new List<T>();
     }
+
+    public class SingleLemonResult<T> where T : class
+    {
+        [JsonProperty("previous")]
+        public string Previous { get; set; }
+
+        [JsonProperty("next")]
+        public string Next { get; set; }
+
+        [JsonProperty("results")]
+        public T Result { get; set; }
+    }
 }
